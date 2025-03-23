@@ -130,34 +130,15 @@ document.addEventListener('DOMContentLoaded', function() {
             downloadProcessedBtn = document.createElement('button');
             downloadProcessedBtn.id = 'downloadProcessedBtn';
             downloadProcessedBtn.className = 'download-button';
-            downloadProcessedBtn.textContent = 'ดาวน์โหลดรูปที่ลบพื้นหลัง (คุณภาพสูง)';
+            downloadProcessedBtn.textContent = 'ดาวน์โหลดรูปที่ลบพื้นหลัง';
             
             // เพิ่ม event listener สำหรับการดาวน์โหลด
             downloadProcessedBtn.addEventListener('click', function() {
                 if (processedImageBlob) {
-                    // สร้างรูปภาพคุณภาพสูงจาก blob
-                    const img = new Image();
-                    img.onload = function() {
-                        // สร้าง canvas ใหม่ที่มีความละเอียดสูงยิ่งขึ้น
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.naturalWidth;
-                        canvas.height = img.naturalHeight;
-                        
-                        const ctx = canvas.getContext('2d');
-                        ctx.imageSmoothingEnabled = true;
-                        ctx.imageSmoothingQuality = 'high';
-                        
-                        ctx.drawImage(img, 0, 0);
-                        
-                        const link = document.createElement('a');
-                        link.download = 'transparent_background_high_quality.png';
-                        link.href = canvas.toDataURL('image/png', 1.0);
-                        link.click();
-                        
-                        updateStatus('กำลังดาวน์โหลดรูปที่ลบพื้นหลังคุณภาพสูง...', 'success');
-                    };
-                    
-                    img.src = URL.createObjectURL(processedImageBlob);
+                    const link = document.createElement('a');
+                    link.download = 'no_background.png';
+                    link.href = URL.createObjectURL(processedImageBlob);
+                    link.click();
                 }
             });
             
@@ -171,20 +152,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function cropToHeadshot(img) {
         updateStatus('กำลังครอปรูปให้ได้ขนาดมาตรฐาน 30×40 mm...', 'processing');
         
-        // เพิ่มความละเอียดอีก 30%
-        const pixelsPerMM = 13; // เพิ่มจาก 10 เป็น 13 (เพิ่ม 30%)
-        const targetWidth = Math.floor(30 * pixelsPerMM);
-        const targetHeight = Math.floor(40 * pixelsPerMM);
+        // คำนวณอัตราส่วนพิกเซลต่อมิลลิเมตร (ประมาณ 10 พิกเซลต่อมิลลิเมตร)
+        const pixelsPerMM = 10;
+        const targetWidth = 30 * pixelsPerMM;
+        const targetHeight = 40 * pixelsPerMM;
         
         // สร้าง canvas สำหรับครอปรูป
         const canvas = document.createElement('canvas');
         canvas.width = targetWidth;
         canvas.height = targetHeight;
         const ctx = canvas.getContext('2d');
-        
-        // ตั้งค่าเพื่อให้การแสดงผลภาพคมชัดขึ้น
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
         
         // เติมพื้นหลังสีขาว
         ctx.fillStyle = '#FFFFFF';
@@ -202,12 +179,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // วาดรูปลงบน canvas
         ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
         
-        // แสดงผลลัพธ์ - ใช้คุณภาพสูงขึ้น
-        croppedImage.src = canvas.toDataURL('image/png', 1.0);
+        // แสดงผลลัพธ์
+        croppedImage.src = canvas.toDataURL('image/png');
         downloadSection.classList.remove('hidden');
         
         // เปลี่ยนข้อความปุ่มดาวน์โหลดให้เฉพาะเจาะจงมากขึ้น
-        downloadBtn.textContent = 'ดาวน์โหลดรูปติดบัตร 30×40 mm (คุณภาพสูง)';
+        downloadBtn.textContent = 'ดาวน์โหลดรูปติดบัตร 30×40 mm';
         
         // เพิ่มข้อมูลขนาดรูปภาพ
         addImageSizeInfo(canvas, img);
@@ -230,54 +207,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // แสดงขนาดรูปภาพ
         sizeInfoDiv.innerHTML = `
             <p>ขนาด: 30×40 mm (${canvas.width}×${canvas.height} pixels)</p>
-            <p>อัตราส่วนพิกเซล: 13 pixels/mm (คุณภาพสูง)</p>
-            <p>ความละเอียด: ${Math.round(13 * 25.4)} DPI</p>
+            <p>อัตราส่วนพิกเซล: 10 pixels/mm</p>
         `;
     }
     
     // ฟังก์ชั่นดาวน์โหลดรูปที่ครอปแล้ว
     function downloadCroppedImage() {
-        // สร้างรูปภาพที่มีความละเอียดสูงสำหรับดาวน์โหลด (ถ้ามีการเรียกใช้ canvas ใหม่)
-        const img = new Image();
-        img.onload = function() {
-            // สร้าง canvas ใหม่ที่มีความละเอียดสูงยิ่งขึ้นสำหรับการดาวน์โหลด
-            const pixelsPerMM = 15; // เพิ่มความละเอียดสำหรับการดาวน์โหลดอีก
-            const targetWidth = Math.floor(30 * pixelsPerMM);
-            const targetHeight = Math.floor(40 * pixelsPerMM);
-            
-            const canvas = document.createElement('canvas');
-            canvas.width = targetWidth;
-            canvas.height = targetHeight;
-            const ctx = canvas.getContext('2d');
-            
-            // ตั้งค่าการแสดงผลภาพคุณภาพสูง
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            
-            // เติมพื้นหลังสีขาว
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // คำนวณอัตราส่วนการย่อขยาย
-            const scale = Math.min(targetWidth / img.naturalWidth, targetHeight / img.naturalHeight);
-            const scaledWidth = img.naturalWidth * scale;
-            const scaledHeight = img.naturalHeight * scale;
-            
-            // คำนวณตำแหน่งให้อยู่ตรงกลาง
-            const x = (targetWidth - scaledWidth) / 2;
-            const y = (targetHeight - scaledHeight) / 2;
-            
-            // วาดรูปลงบน canvas
-            ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-            
-            // ดาวน์โหลดรูปภาพคุณภาพสูง
-            const link = document.createElement('a');
-            link.download = 'headshot_30x40mm_high_quality.png';
-            link.href = canvas.toDataURL('image/png', 1.0);
-            link.click();
-            
-            updateStatus('กำลังดาวน์โหลดรูปติดบัตรคุณภาพสูง...', 'success');
-        };
-        img.src = processedImage.src;
+        const link = document.createElement('a');
+        link.download = 'headshot_30x40mm.png';
+        link.href = croppedImage.src;
+        link.click();
     }
 });
