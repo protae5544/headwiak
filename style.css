@@ -66,6 +66,8 @@ h1 {
     min-width: 250px;
     max-width: 300px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
 }
 
 .preview-section h3 {
@@ -109,16 +111,27 @@ h1 {
 .download-button {
     background-color: #27ae60;
     color: white;
-    padding: 15px 30px;
+    padding: 12px 20px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 14px;
     transition: background-color 0.3s ease;
+    margin-top: 10px;
+    width: 100%;
 }
 
 .download-button:hover {
     background-color: #219653;
+}
+
+/* เพิ่มสไตล์สำหรับปุ่มดาวน์โหลดที่ลบพื้นหลัง */
+#downloadProcessedBtn {
+    background-color: #9b59b6;
+}
+
+#downloadProcessedBtn:hover {
+    background-color: #8e44ad;
 }
 
 .footer {
@@ -145,6 +158,14 @@ h1 {
     transform: translateY(-50%);
 }
 
+/* สไตล์สำหรับข้อมูลขนาดรูปภาพ */
+.image-info {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #7f8c8d;
+    text-align: center;
+}
+
 @keyframes spin {
     0% { transform: translateY(-50%) rotate(0deg); }
     100% { transform: translateY(-50%) rotate(360deg); }
@@ -161,122 +182,3 @@ h1 {
         max-width: 100%;
     }
 }
-```
-
-### script.js
-```javascript
-document.addEventListener('DOMContentLoaded', function() {
-    // API Key สำหรับ remove.bg
-    const API_KEY = "VEjMfyz3s1dZxJKnbQYAG9m8";
-    
-    // DOM Elements
-    const imageInput = document.getElementById('imageInput');
-    const originalImage = document.getElementById('originalImage');
-    const processedImage = document.getElementById('processedImage');
-    const croppedImage = document.getElementById('croppedImage');
-    const previewContainer = document.getElementById('previewContainer');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const downloadSection = document.getElementById('downloadSection');
-    const spinner = document.getElementById('spinner');
-    
-    // Event Listeners
-    imageInput.addEventListener('change', handleImageUpload);
-    downloadBtn.addEventListener('click', downloadCroppedImage);
-    
-    // ฟังก์ชั่นเมื่อมีการอัพโหลดรูปภาพ
-    function handleImageUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        
-        // แสดงรูปต้นฉบับ
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            originalImage.src = e.target.result;
-            previewContainer.classList.remove('hidden');
-            spinner.classList.remove('hidden');
-            removeBackground(file);
-        };
-        reader.readAsDataURL(file);
-    }
-    
-    // ฟังก์ชั่นลบพื้นหลังด้วย remove.bg API
-    function removeBackground(file) {
-        const formData = new FormData();
-        formData.append('image_file', file);
-        formData.append('size', 'auto');
-        
-        fetch('https://api.remove.bg/v1.0/removebg', {
-            method: 'POST',
-            headers: {
-                'X-Api-Key': API_KEY
-            },
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.blob();
-        })
-        .then(blob => {
-            const url = URL.createObjectURL(blob);
-            processedImage.src = url;
-            
-            // สร้างรูปภาพใหม่เพื่อคำนวณการครอป
-            const img = new Image();
-            img.onload = function() {
-                cropToHeadshot(img);
-            };
-            img.src = url;
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('เกิดข้อผิดพลาดในการลบพื้นหลัง: ' + error.message);
-        })
-        .finally(() => {
-            spinner.classList.add('hidden');
-        });
-    }
-    
-    // ฟังก์ชั่นครอปรูปเป็น headshot ขนาด 30x40 mm
-    function cropToHeadshot(img) {
-        // คำนวณอัตราส่วนพิกเซลต่อมิลลิเมตร (ประมาณ 10 พิกเซลต่อมิลลิเมตร)
-        const pixelsPerMM = 10;
-        const targetWidth = 30 * pixelsPerMM;
-        const targetHeight = 40 * pixelsPerMM;
-        
-        // สร้าง canvas สำหรับครอปรูป
-        const canvas = document.createElement('canvas');
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        const ctx = canvas.getContext('2d');
-        
-        // เติมพื้นหลังสีขาว
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // คำนวณอัตราส่วนการย่อขยาย
-        const scale = Math.min(targetWidth / img.width, targetHeight / img.height);
-        const scaledWidth = img.width * scale;
-        const scaledHeight = img.height * scale;
-        
-        // คำนวณตำแหน่งให้อยู่ตรงกลาง
-        const x = (targetWidth - scaledWidth) / 2;
-        const y = (targetHeight - scaledHeight) / 2;
-        
-        // วาดรูปลงบน canvas
-        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-        
-        // แสดงผลลัพธ์
-        croppedImage.src = canvas.toDataURL('image/png');
-        downloadSection.classList.remove('hidden');
-    }
-    
-    // ฟังก์ชั่นดาวน์โหลดรูปที่ครอปแล้ว
-    function downloadCroppedImage() {
-        const link = document.createElement('a');
-        link.download = 'headshot_30x40mm.png';
-        link.href = croppedImage.src;
-        link.click();
-    }
-});
