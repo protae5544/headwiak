@@ -1,0 +1,282 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.subtitle {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #7f8c8d;
+}
+
+.upload-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 40px;
+    position: relative;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.upload-button {
+    background-color: #3498db;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.upload-button:hover {
+    background-color: #2980b9;
+}
+
+.preview-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.preview-section {
+    flex: 1;
+    min-width: 250px;
+    max-width: 300px;
+    text-align: center;
+}
+
+.preview-section h3 {
+    margin-bottom: 15px;
+    color: #2c3e50;
+}
+
+.image-container {
+    border: 1px solid #ddd;
+    padding: 10px;
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-container img {
+    max-width: 100%;
+    max-height: 300px;
+}
+
+#croppedContainer {
+    position: relative;
+    width: 100%;
+    background-color: white;
+}
+
+#croppedImage {
+    max-width: 100%;
+    height: auto;
+}
+
+.download-section {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.download-button {
+    background-color: #27ae60;
+    color: white;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.download-button:hover {
+    background-color: #219653;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 40px;
+    color: #7f8c8d;
+}
+
+.footer a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border-left-color: #3498db;
+    animation: spin 1s linear infinite;
+    position: absolute;
+    right: -50px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+@keyframes spin {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .preview-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .preview-section {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+```
+
+### script.js
+```javascript
+document.addEventListener('DOMContentLoaded', function() {
+    // API Key สำหรับ remove.bg
+    const API_KEY = "VEjMfyz3s1dZxJKnbQYAG9m8";
+    
+    // DOM Elements
+    const imageInput = document.getElementById('imageInput');
+    const originalImage = document.getElementById('originalImage');
+    const processedImage = document.getElementById('processedImage');
+    const croppedImage = document.getElementById('croppedImage');
+    const previewContainer = document.getElementById('previewContainer');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const downloadSection = document.getElementById('downloadSection');
+    const spinner = document.getElementById('spinner');
+    
+    // Event Listeners
+    imageInput.addEventListener('change', handleImageUpload);
+    downloadBtn.addEventListener('click', downloadCroppedImage);
+    
+    // ฟังก์ชั่นเมื่อมีการอัพโหลดรูปภาพ
+    function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        // แสดงรูปต้นฉบับ
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            originalImage.src = e.target.result;
+            previewContainer.classList.remove('hidden');
+            spinner.classList.remove('hidden');
+            removeBackground(file);
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    // ฟังก์ชั่นลบพื้นหลังด้วย remove.bg API
+    function removeBackground(file) {
+        const formData = new FormData();
+        formData.append('image_file', file);
+        formData.append('size', 'auto');
+        
+        fetch('https://api.remove.bg/v1.0/removebg', {
+            method: 'POST',
+            headers: {
+                'X-Api-Key': API_KEY
+            },
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            processedImage.src = url;
+            
+            // สร้างรูปภาพใหม่เพื่อคำนวณการครอป
+            const img = new Image();
+            img.onload = function() {
+                cropToHeadshot(img);
+            };
+            img.src = url;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการลบพื้นหลัง: ' + error.message);
+        })
+        .finally(() => {
+            spinner.classList.add('hidden');
+        });
+    }
+    
+    // ฟังก์ชั่นครอปรูปเป็น headshot ขนาด 30x40 mm
+    function cropToHeadshot(img) {
+        // คำนวณอัตราส่วนพิกเซลต่อมิลลิเมตร (ประมาณ 10 พิกเซลต่อมิลลิเมตร)
+        const pixelsPerMM = 10;
+        const targetWidth = 30 * pixelsPerMM;
+        const targetHeight = 40 * pixelsPerMM;
+        
+        // สร้าง canvas สำหรับครอปรูป
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d');
+        
+        // เติมพื้นหลังสีขาว
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // คำนวณอัตราส่วนการย่อขยาย
+        const scale = Math.min(targetWidth / img.width, targetHeight / img.height);
+        const scaledWidth = img.width * scale;
+        const scaledHeight = img.height * scale;
+        
+        // คำนวณตำแหน่งให้อยู่ตรงกลาง
+        const x = (targetWidth - scaledWidth) / 2;
+        const y = (targetHeight - scaledHeight) / 2;
+        
+        // วาดรูปลงบน canvas
+        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+        
+        // แสดงผลลัพธ์
+        croppedImage.src = canvas.toDataURL('image/png');
+        downloadSection.classList.remove('hidden');
+    }
+    
+    // ฟังก์ชั่นดาวน์โหลดรูปที่ครอปแล้ว
+    function downloadCroppedImage() {
+        const link = document.createElement('a');
+        link.download = 'headshot_30x40mm.png';
+        link.href = croppedImage.src;
+        link.click();
+    }
+});
