@@ -3,37 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Processing App</title>
-    <style>
-        .hidden { display: none; }
-        .status-message { margin: 10px 0; }
-        .status-message.info { color: blue; }
-        .status-message.processing { color: orange; }
-        .status-message.success { color: green; }
-        .status-message.error { color: red; }
-        .download-button { margin-top: 10px; }
-    </style>
+    <title>Headwiak - Image Processing</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <input type="file" id="imageInput" accept="image/*">
-        <div id="previewContainer" class="hidden">
-            <h2>Original Image</h2>
-            <img id="originalImage" src="" alt="Original Image">
+        <h1>Headwiak - Image Processing</h1>
+        <p class="subtitle">ลบพื้นหลัง + ปรับขนาดรูปติดบัตร</p>
+
+        <div class="upload-container">
+            <input type="file" id="imageInput" accept="image/*" multiple>
+            <button class="upload-button">อัพโหลดรูป</button>
         </div>
-        <div class="preview-section hidden">
-            <h2>Processed Image</h2>
-            <img id="processedImage" src="" alt="Processed Image">
+
+        <div class="resolution-settings">
+            <label for="resolutionSlider">ปรับความละเอียด:</label>
+            <input type="range" id="resolutionSlider" min="100" max="2000" value="1000">
+            <span id="resolutionValue">1000 px</span>
         </div>
-        <div class="preview-section hidden">
-            <h2>Cropped Image</h2>
-            <img id="croppedImage" src="" alt="Cropped Image">
-        </div>
+
+        <div id="previewContainer" class="hidden"></div>
+
         <div id="downloadSection" class="hidden">
-            <button id="downloadBtn">Download Cropped Image</button>
+            <button id="downloadBtn" class="download-button">ดาวน์โหลดรูปติดบัตร</button>
         </div>
-        <div id="spinner" class="hidden">Loading...</div>
     </div>
+
     <script src="Scripts.js"></script>
 </body>
 </html>
