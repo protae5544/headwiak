@@ -3,32 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Headwiak - Image Processing</title>
+    <title>รูปถ่ายติดบัตร - ลบพื้นหลัง</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Headwiak - Image Processing</h1>
-        <p class="subtitle">ลบพื้นหลัง + ปรับขนาดรูปติดบัตร</p>
-
+        <h1>แอปลบพื้นหลังรูปและครอป Head Shot</h1>
+        <p class="subtitle">ลบพื้นหลัง และครอปขนาด 30×40 mm สำหรับรูปติดบัตร</p>
+        
+        <!-- คำแนะนำเพิ่มเติม -->
+        <div class="instructions">
+            <p><strong>วิธีใช้งาน:</strong> 1) กดเลือกรูปภาพ 2) รอลบพื้นหลัง 3) ดาวน์โหลดรูปแบบที่ต้องการ</p>
+            <p><strong>หมายเหตุ:</strong> กรุณารอสักครู่หลังอัพโหลดภาพ การเชื่อมต่อกับ Remove.bg อาจใช้เวลา 5-10 วินาที</p>
+        </div>
+        
         <div class="upload-container">
-            <input type="file" id="imageInput" accept="image/*" multiple>
-            <button class="upload-button">อัพโหลดรูป</button>
+            <input type="file" id="imageInput" accept="image/*" class="hidden">
+            <label for="imageInput" class="upload-button">เลือกรูปภาพ</label>
+            <div id="spinner" class="spinner hidden"></div>
         </div>
-
-        <div class="resolution-settings">
-            <label for="resolutionSlider">ปรับความละเอียด:</label>
-            <input type="range" id="resolutionSlider" min="100" max="2000" value="1000">
-            <span id="resolutionValue">1000 px</span>
+        
+        <div class="preview-container hidden" id="previewContainer">
+            <div class="preview-section">
+                <h3>รูปต้นฉบับ</h3>
+                <div class="image-container">
+                    <img id="originalImage" src="#" alt="รูปต้นฉบับ">
+                </div>
+            </div>
+            
+            <div class="preview-section">
+                <h3>รูปที่ลบพื้นหลัง</h3>
+                <div class="image-container">
+                    <img id="processedImage" src="#" alt="รูปที่ลบพื้นหลัง">
+                </div>
+                <!-- ปุ่มดาวน์โหลดรูปที่ลบพื้นหลังจะถูกสร้างด้วย JavaScript -->
+            </div>
+            
+            <div class="preview-section">
+                <h3>รูปติดบัตร 30×40 mm</h3>
+                <div class="image-container" id="croppedContainer">
+                    <img id="croppedImage" src="#" alt="รูปที่ครอปแล้ว">
+                </div>
+                <!-- ข้อมูลขนาดรูปภาพจะถูกสร้างด้วย JavaScript -->
+            </div>
         </div>
-
-        <div id="previewContainer" class="hidden"></div>
-
-        <div id="downloadSection" class="hidden">
+        
+        <div id="downloadSection" class="download-section hidden">
             <button id="downloadBtn" class="download-button">ดาวน์โหลดรูปติดบัตร</button>
         </div>
+        
+        <div class="footer">
+            <p>บริการนี้ใช้ API จาก <a href="https://www.remove.bg" target="_blank">Remove.bg</a></p>
+            <p>สามารถดาวน์โหลดทั้งรูปที่ลบพื้นหลังและรูปติดบัตรได้ในคุณภาพสูง</p>
+            <p><small>ความละเอียดที่เพิ่มขึ้น 30% (13 pixels/mm หรือประมาณ 330 DPI)</small></p>
+        </div>
     </div>
-
-    <script src="Scripts.js"></script>
+    
+    <script src="script.js"></script>
 </body>
 </html>
