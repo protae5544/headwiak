@@ -1,221 +1,39 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // API Key สำหรับ remove.bg
-    const API_KEY = "VEjMfyz3s1dZxJKnbQYAG9m8";
-    
-    // DOM Elements
-    const imageInput = document.getElementById('imageInput');
-    const originalImage = document.getElementById('originalImage');
-    const processedImage = document.getElementById('processedImage');
-    const croppedImage = document.getElementById('croppedImage');
-    const previewContainer = document.getElementById('previewContainer');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const downloadSection = document.getElementById('downloadSection');
-    const spinner = document.getElementById('spinner');
-    
-    // ตัวแปรเก็บข้อมูลรูปภาพ
-    let processedImageBlob = null;
-    
-    // DOM Elements สำหรับแสดงสถานะ
-    const statusMessage = document.createElement('div');
-    statusMessage.className = 'status-message';
-    document.querySelector('.container').appendChild(statusMessage);
-    
-    // Event Listeners
-    imageInput.addEventListener('change', handleImageUpload);
-    downloadBtn.addEventListener('click', downloadCroppedImage);
-    
-    // ฟังก์ชั่นเมื่อมีการอัพโหลดรูปภาพ
-    function handleImageUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        
-        // แสดงสถานะ
-        updateStatus('กำลังโหลดรูปภาพ...', 'info');
-        
-        // แสดงรูปต้นฉบับ
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            originalImage.src = e.target.result;
-            previewContainer.classList.remove('hidden');
-            spinner.classList.remove('hidden');
-            
-            // แสดงข้อความว่ากำลังส่งรูปไปลบพื้นหลัง
-            updateStatus('กำลังส่งรูปภาพไปลบพื้นหลังที่ Remove.bg... (อาจใช้เวลา 5-10 วินาที)', 'processing');
-            
-            // เรียกฟังก์ชันลบพื้นหลัง
-            removeBackground(file);
-        };
-        reader.readAsDataURL(file);
-    }
-    
-    // ฟังก์ชั่นอัพเดทสถานะ
-    function updateStatus(message, type) {
-        statusMessage.textContent = message;
-        statusMessage.className = 'status-message ' + type;
-        statusMessage.classList.remove('hidden');
-    }
-    
-    // ฟังก์ชั่นลบพื้นหลังด้วย remove.bg API
-    function removeBackground(file) {
-        const formData = new FormData();
-        formData.append('image_file', file);
-        formData.append('size', 'auto');
-        
-        // เพิ่มการจัดการ timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 วินาที timeout
-        
-        fetch('https://api.remove.bg/v1.0/removebg', {
-            method: 'POST',
-            headers: {
-                'X-Api-Key': API_KEY
-            },
-            body: formData,
-            signal: controller.signal
-        })
-        .then(response => {
-            clearTimeout(timeoutId);
-            if (!response.ok) {
-                if (response.status === 429) {
-                    throw new Error('คุณใช้งาน API เกินขีดจำกัด โปรดลองอีกครั้งในภายหลัง');
-                }
-                if (response.status === 402) {
-                    throw new Error('คีย์ API หมดอายุหรือเครดิตหมด โปรดตรวจสอบบัญชี Remove.bg ของคุณ');
-                }
-                throw new Error('การเชื่อมต่อกับ Remove.bg ล้มเหลว (รหัส: ' + response.status + ')');
-            }
-            updateStatus('ได้รับรูปภาพที่ลบพื้นหลังแล้ว กำลังประมวลผล...', 'success');
-            return response.blob();
-        })
-        .then(blob => {
-            // เก็บ blob สำหรับดาวน์โหลดภายหลัง
-            processedImageBlob = blob;
-            
-            const url = URL.createObjectURL(blob);
-            processedImage.src = url;
-            
-            updateStatus('กำลังสร้างรูปติดบัตร...', 'processing');
-            
-            // สร้างปุ่มดาวน์โหลดรูปที่ลบพื้นหลัง
-            addDownloadButtonForProcessedImage();
-            
-            // สร้างรูปภาพใหม่เพื่อคำนวณการครอป
-            const img = new Image();
-            img.onload = function() {
-                cropToHeadshot(img);
-                updateStatus('เสร็จสิ้น! คุณสามารถดาวน์โหลดรูปได้ทั้งสองแบบ', 'success');
-            };
-            img.src = url;
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            if (error.name === 'AbortError') {
-                updateStatus('การเชื่อมต่อกับ Remove.bg หมดเวลา โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและลองอีกครั้ง', 'error');
-            } else {
-                updateStatus('เกิดข้อผิดพลาด: ' + error.message, 'error');
-            }
-        })
-        .finally(() => {
-            spinner.classList.add('hidden');
-        });
-    }
-    
-    // ฟังก์ชั่นเพิ่มปุ่มดาวน์โหลดรูปที่ลบพื้นหลัง
-    function addDownloadButtonForProcessedImage() {
-        // ตรวจสอบว่ามีปุ่มอยู่แล้วหรือไม่
-        let downloadProcessedBtn = document.getElementById('downloadProcessedBtn');
-        
-        if (!downloadProcessedBtn) {
-            // สร้างปุ่มดาวน์โหลดรูปที่ลบพื้นหลัง
-            downloadProcessedBtn = document.createElement('button');
-            downloadProcessedBtn.id = 'downloadProcessedBtn';
-            downloadProcessedBtn.className = 'download-button';
-            downloadProcessedBtn.textContent = 'ดาวน์โหลดรูปที่ลบพื้นหลัง';
-            
-            // เพิ่ม event listener สำหรับการดาวน์โหลด
-            downloadProcessedBtn.addEventListener('click', function() {
-                if (processedImageBlob) {
-                    const link = document.createElement('a');
-                    link.download = 'no_background.png';
-                    link.href = URL.createObjectURL(processedImageBlob);
-                    link.click();
-                }
-            });
-            
-            // หาตำแหน่งสำหรับใส่ปุ่ม
-            const processedSection = processedImage.closest('.preview-section');
-            processedSection.appendChild(downloadProcessedBtn);
-        }
-    }
-    
-    // ฟังก์ชั่นครอปรูปเป็น headshot ขนาด 30x40 mm
-    function cropToHeadshot(img) {
-        updateStatus('กำลังครอปรูปให้ได้ขนาดมาตรฐาน 30×40 mm...', 'processing');
-        
-        // คำนวณอัตราส่วนพิกเซลต่อมิลลิเมตร (ประมาณ 10 พิกเซลต่อมิลลิเมตร)
-        const pixelsPerMM = 10;
-        const targetWidth = 30 * pixelsPerMM;
-        const targetHeight = 40 * pixelsPerMM;
-        
-        // สร้าง canvas สำหรับครอปรูป
-        const canvas = document.createElement('canvas');
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        const ctx = canvas.getContext('2d');
-        
-        // เติมพื้นหลังสีขาว
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // คำนวณอัตราส่วนการย่อขยาย
-        const scale = Math.min(targetWidth / img.width, targetHeight / img.height);
-        const scaledWidth = img.width * scale;
-        const scaledHeight = img.height * scale;
-        
-        // คำนวณตำแหน่งให้อยู่ตรงกลาง
-        const x = (targetWidth - scaledWidth) / 2;
-        const y = (targetHeight - scaledHeight) / 2;
-        
-        // วาดรูปลงบน canvas
-        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-        
-        // แสดงผลลัพธ์
-        croppedImage.src = canvas.toDataURL('image/png');
-        downloadSection.classList.remove('hidden');
-        
-        // เปลี่ยนข้อความปุ่มดาวน์โหลดให้เฉพาะเจาะจงมากขึ้น
-        downloadBtn.textContent = 'ดาวน์โหลดรูปติดบัตร 30×40 mm';
-        
-        // เพิ่มข้อมูลขนาดรูปภาพ
-        addImageSizeInfo(canvas, img);
-    }
-    
-    // ฟังก์ชั่นเพิ่มข้อมูลขนาดรูปภาพ
-    function addImageSizeInfo(canvas, originalImg) {
-        // สร้าง div สำหรับแสดงข้อมูลขนาดรูปภาพ
-        let sizeInfoDiv = document.getElementById('imageSizeInfo');
-        
-        if (!sizeInfoDiv) {
-            sizeInfoDiv = document.createElement('div');
-            sizeInfoDiv.id = 'imageSizeInfo';
-            sizeInfoDiv.className = 'image-info';
-            
-            const croppedSection = croppedImage.closest('.preview-section');
-            croppedSection.appendChild(sizeInfoDiv);
-        }
-        
-        // แสดงขนาดรูปภาพ
-        sizeInfoDiv.innerHTML = `
-            <p>ขนาด: 30×40 mm (${canvas.width}×${canvas.height} pixels)</p>
-            <p>อัตราส่วนพิกเซล: 10 pixels/mm</p>
-        `;
-    }
-    
-    // ฟังก์ชั่นดาวน์โหลดรูปที่ครอปแล้ว
-    function downloadCroppedImage() {
-        const link = document.createElement('a');
-        link.download = 'headshot_30x40mm.png';
-        link.href = croppedImage.src;
-        link.click();
-    }
-});
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Processing App</title>
+    <style>
+        .hidden { display: none; }
+        .status-message { margin: 10px 0; }
+        .status-message.info { color: blue; }
+        .status-message.processing { color: orange; }
+        .status-message.success { color: green; }
+        .status-message.error { color: red; }
+        .download-button { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <input type="file" id="imageInput" accept="image/*">
+        <div id="previewContainer" class="hidden">
+            <h2>Original Image</h2>
+            <img id="originalImage" src="" alt="Original Image">
+        </div>
+        <div class="preview-section hidden">
+            <h2>Processed Image</h2>
+            <img id="processedImage" src="" alt="Processed Image">
+        </div>
+        <div class="preview-section hidden">
+            <h2>Cropped Image</h2>
+            <img id="croppedImage" src="" alt="Cropped Image">
+        </div>
+        <div id="downloadSection" class="hidden">
+            <button id="downloadBtn">Download Cropped Image</button>
+        </div>
+        <div id="spinner" class="hidden">Loading...</div>
+    </div>
+    <script src="Scripts.js"></script>
+</body>
+</html>
