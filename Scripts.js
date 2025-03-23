@@ -15,6 +15,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // ตัวแปรเก็บข้อมูลรูปภาพ
     let processedImageBlob = null;
     
+    // DOM Elements สำหรับแสดงสถานะ
+    const statusMessage = document.createElement('div');
+    statusMessage.className = 'status-message';
+    document.querySelector('.container').appendChild(statusMessage);
+    
     // Event Listeners
     imageInput.addEventListener('change', handleImageUpload);
     downloadBtn.addEventListener('click', downloadCroppedImage);
@@ -24,15 +29,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const file = event.target.files[0];
         if (!file) return;
         
+        // แสดงสถานะ
+        updateStatus('กำลังโหลดรูปภาพ...', 'info');
+        
         // แสดงรูปต้นฉบับ
         const reader = new FileReader();
         reader.onload = function(e) {
             originalImage.src = e.target.result;
             previewContainer.classList.remove('hidden');
             spinner.classList.remove('hidden');
+            
+            // แสดงข้อความว่ากำลังส่งรูปไปลบพื้นหลัง
+            updateStatus('กำลังส่งรูปภาพไปลบพื้นหลังที่ Remove.bg... (อาจใช้เวลา 5-10 วินาที)', 'processing');
+            
+            // เรียกฟังก์ชันลบพื้นหลัง
             removeBackground(file);
         };
         reader.readAsDataURL(file);
+    }
+    
+    // ฟังก์ชั่นอัพเดทสถานะ
+    function updateStatus(message, type) {
+        statusMessage.textContent = message;
+        statusMessage.className = 'status-message ' + type;
+        statusMessage.classList.remove('hidden');
     }
     
     // ฟังก์ชั่นลบพื้นหลังด้วย remove.bg API
@@ -41,17 +61,30 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('image_file', file);
         formData.append('size', 'auto');
         
+        // เพิ่มการจัดการ timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 วินาที timeout
+        
         fetch('https://api.remove.bg/v1.0/removebg', {
             method: 'POST',
             headers: {
                 'X-Api-Key': API_KEY
             },
-            body: formData
+            body: formData,
+            signal: controller.signal
         })
         .then(response => {
+            clearTimeout(timeoutId);
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                if (response.status === 429) {
+                    throw new Error('คุณใช้งาน API เกินขีดจำกัด โปรดลองอีกครั้งในภายหลัง');
+                }
+                if (response.status === 402) {
+                    throw new Error('คีย์ API หมดอายุหรือเครดิตหมด โปรดตรวจสอบบัญชี Remove.bg ของคุณ');
+                }
+                throw new Error('การเชื่อมต่อกับ Remove.bg ล้มเหลว (รหัส: ' + response.status + ')');
             }
+            updateStatus('ได้รับรูปภาพที่ลบพื้นหลังแล้ว กำลังประมวลผล...', 'success');
             return response.blob();
         })
         .then(blob => {
@@ -61,6 +94,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const url = URL.createObjectURL(blob);
             processedImage.src = url;
             
+            updateStatus('กำลังสร้างรูปติดบัตร...', 'processing');
+            
             // สร้างปุ่มดาวน์โหลดรูปที่ลบพื้นหลัง
             addDownloadButtonForProcessedImage();
             
@@ -68,12 +103,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const img = new Image();
             img.onload = function() {
                 cropToHeadshot(img);
+                updateStatus('เสร็จสิ้น! คุณสามารถดาวน์โหลดรูปได้ทั้งสองแบบ', 'success');
             };
             img.src = url;
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('เกิดข้อผิดพลาดในการลบพื้นหลัง: ' + error.message);
+            if (error.name === 'AbortError') {
+                updateStatus('การเชื่อมต่อกับ Remove.bg หมดเวลา โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและลองอีกครั้ง', 'error');
+            } else {
+                updateStatus('เกิดข้อผิดพลาด: ' + error.message, 'error');
+            }
         })
         .finally(() => {
             spinner.classList.add('hidden');
@@ -110,6 +150,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ฟังก์ชั่นครอปรูปเป็น headshot ขนาด 30x40 mm
     function cropToHeadshot(img) {
+        updateStatus('กำลังครอปรูปให้ได้ขนาดมาตรฐาน 30×40 mm...', 'processing');
+        
         // คำนวณอัตราส่วนพิกเซลต่อมิลลิเมตร (ประมาณ 10 พิกเซลต่อมิลลิเมตร)
         const pixelsPerMM = 10;
         const targetWidth = 30 * pixelsPerMM;
