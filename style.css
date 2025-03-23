@@ -25,8 +25,23 @@ h1 {
 
 .subtitle {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 15px;
     color: #7f8c8d;
+}
+
+/* สไตล์สำหรับคำแนะนำ */
+.instructions {
+    background-color: #f8f9fa;
+    border-left: 4px solid #3498db;
+    padding: 15px;
+    margin-bottom: 25px;
+    border-radius: 0 5px 5px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.instructions p {
+    margin: 5px 0;
+    font-size: 14px;
 }
 
 .upload-container {
@@ -164,6 +179,48 @@ h1 {
     font-size: 12px;
     color: #7f8c8d;
     text-align: center;
+}
+
+/* สไตล์สำหรับข้อความสถานะ */
+.status-message {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 20px;
+    border-radius: 5px;
+    z-index: 1000;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 80%;
+    text-align: center;
+    transition: all 0.3s ease;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -10px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.status-message.info {
+    background-color: #3498db;
+    color: white;
+}
+
+.status-message.success {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.status-message.error {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.status-message.processing {
+    background-color: #f39c12;
+    color: white;
 }
 
 @keyframes spin {
