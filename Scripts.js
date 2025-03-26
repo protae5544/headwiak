@@ -1,221 +1,214 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // API Key สำหรับ remove.bg
-    const API_KEY = "VEjMfyz3s1dZxJKnbQYAG9m8";
+    var dropArea = document.getElementById('drop-area');
+    var fileInput = document.getElementById('file-input');
+    var selectButton = document.getElementById('select-button');
+    var progressContainer = document.getElementById('progress-container');
+    var progressBar = document.getElementById('progress-bar');
+    var preview = document.getElementById('preview');
+    var htmlOutput = document.getElementById('html-output');
+    var downloadButton = document.getElementById('download-html');
+    var copyButton = document.getElementById('copy-html');
     
-    // DOM Elements
-    const imageInput = document.getElementById('imageInput');
-    const originalImage = document.getElementById('originalImage');
-    const processedImage = document.getElementById('processedImage');
-    const croppedImage = document.getElementById('croppedImage');
-    const previewContainer = document.getElementById('previewContainer');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const downloadSection = document.getElementById('downloadSection');
-    const spinner = document.getElementById('spinner');
+    // ตัวแปรเก็บข้อมูล
+    var processedHTML = '';
     
-    // ตัวแปรเก็บข้อมูลรูปภาพ
-    let processedImageBlob = null;
+    // อีเวนต์คลิกที่ปุ่มเลือกไฟล์
+    selectButton.addEventListener('click', function() {
+        fileInput.click();
+    });
     
-    // DOM Elements สำหรับแสดงสถานะ
-    const statusMessage = document.createElement('div');
-    statusMessage.className = 'status-message';
-    document.querySelector('.container').appendChild(statusMessage);
+    // อีเวนต์เมื่อมีการเลือกไฟล์
+    fileInput.addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (file && file.type === 'application/pdf') {
+            processFile(file);
+        } else {
+            alert('กรุณาเลือกไฟล์ PDF เท่านั้น');
+        }
+    });
     
-    // Event Listeners
-    imageInput.addEventListener('change', handleImageUpload);
-    downloadBtn.addEventListener('click', downloadCroppedImage);
+    // อีเวนต์ลากและวางไฟล์
+    dropArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropArea.style.backgroundColor = '#e9e9e9';
+    });
     
-    // ฟังก์ชั่นเมื่อมีการอัพโหลดรูปภาพ
-    function handleImageUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+    dropArea.addEventListener('dragleave', function() {
+        dropArea.style.backgroundColor = '#f9f9f9';
+    });
+    
+    dropArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropArea.style.backgroundColor = '#f9f9f9';
         
-        // แสดงสถานะ
-        updateStatus('กำลังโหลดรูปภาพ...', 'info');
-        
-        // แสดงรูปต้นฉบับ
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            originalImage.src = e.target.result;
-            previewContainer.classList.remove('hidden');
-            spinner.classList.remove('hidden');
-            
-            // แสดงข้อความว่ากำลังส่งรูปไปลบพื้นหลัง
-            updateStatus('กำลังส่งรูปภาพไปลบพื้นหลังที่ Remove.bg... (อาจใช้เวลา 5-10 วินาที)', 'processing');
-            
-            // เรียกฟังก์ชันลบพื้นหลัง
-            removeBackground(file);
-        };
-        reader.readAsDataURL(file);
-    }
+        var file = e.dataTransfer.files[0];
+        if (file && file.type === 'application/pdf') {
+            processFile(file);
+        } else {
+            alert('กรุณาลากไฟล์ PDF เท่านั้น');
+        }
+    });
     
-    // ฟังก์ชั่นอัพเดทสถานะ
-    function updateStatus(message, type) {
-        statusMessage.textContent = message;
-        statusMessage.className = 'status-message ' + type;
-        statusMessage.classList.remove('hidden');
-    }
+    // อีเวนต์ดาวน์โหลด HTML
+    downloadButton.addEventListener('click', function() {
+        if (processedHTML) {
+            var blob = new Blob([processedHTML], { type: 'text/html' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'converted-document.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
     
-    // ฟังก์ชั่นลบพื้นหลังด้วย remove.bg API
-    function removeBackground(file) {
-        const formData = new FormData();
-        formData.append('image_file', file);
-        formData.append('size', 'auto');
-        
-        // เพิ่มการจัดการ timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 วินาที timeout
-        
-        fetch('https://api.remove.bg/v1.0/removebg', {
-            method: 'POST',
-            headers: {
-                'X-Api-Key': API_KEY
-            },
-            body: formData,
-            signal: controller.signal
-        })
-        .then(response => {
-            clearTimeout(timeoutId);
-            if (!response.ok) {
-                if (response.status === 429) {
-                    throw new Error('คุณใช้งาน API เกินขีดจำกัด โปรดลองอีกครั้งในภายหลัง');
-                }
-                if (response.status === 402) {
-                    throw new Error('คีย์ API หมดอายุหรือเครดิตหมด โปรดตรวจสอบบัญชี Remove.bg ของคุณ');
-                }
-                throw new Error('การเชื่อมต่อกับ Remove.bg ล้มเหลว (รหัส: ' + response.status + ')');
-            }
-            updateStatus('ได้รับรูปภาพที่ลบพื้นหลังแล้ว กำลังประมวลผล...', 'success');
-            return response.blob();
-        })
-        .then(blob => {
-            // เก็บ blob สำหรับดาวน์โหลดภายหลัง
-            processedImageBlob = blob;
-            
-            const url = URL.createObjectURL(blob);
-            processedImage.src = url;
-            
-            updateStatus('กำลังสร้างรูปติดบัตร...', 'processing');
-            
-            // สร้างปุ่มดาวน์โหลดรูปที่ลบพื้นหลัง
-            addDownloadButtonForProcessedImage();
-            
-            // สร้างรูปภาพใหม่เพื่อคำนวณการครอป
-            const img = new Image();
-            img.onload = function() {
-                cropToHeadshot(img);
-                updateStatus('เสร็จสิ้น! คุณสามารถดาวน์โหลดรูปได้ทั้งสองแบบ', 'success');
-            };
-            img.src = url;
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            if (error.name === 'AbortError') {
-                updateStatus('การเชื่อมต่อกับ Remove.bg หมดเวลา โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและลองอีกครั้ง', 'error');
-            } else {
-                updateStatus('เกิดข้อผิดพลาด: ' + error.message, 'error');
-            }
-        })
-        .finally(() => {
-            spinner.classList.add('hidden');
-        });
-    }
-    
-    // ฟังก์ชั่นเพิ่มปุ่มดาวน์โหลดรูปที่ลบพื้นหลัง
-    function addDownloadButtonForProcessedImage() {
-        // ตรวจสอบว่ามีปุ่มอยู่แล้วหรือไม่
-        let downloadProcessedBtn = document.getElementById('downloadProcessedBtn');
-        
-        if (!downloadProcessedBtn) {
-            // สร้างปุ่มดาวน์โหลดรูปที่ลบพื้นหลัง
-            downloadProcessedBtn = document.createElement('button');
-            downloadProcessedBtn.id = 'downloadProcessedBtn';
-            downloadProcessedBtn.className = 'download-button';
-            downloadProcessedBtn.textContent = 'ดาวน์โหลดรูปที่ลบพื้นหลัง';
-            
-            // เพิ่ม event listener สำหรับการดาวน์โหลด
-            downloadProcessedBtn.addEventListener('click', function() {
-                if (processedImageBlob) {
-                    const link = document.createElement('a');
-                    link.download = 'no_background.png';
-                    link.href = URL.createObjectURL(processedImageBlob);
-                    link.click();
-                }
+    // อีเวนต์คัดลอก HTML
+    copyButton.addEventListener('click', function() {
+        if (processedHTML) {
+            navigator.clipboard.writeText(processedHTML).then(function() {
+                alert('คัดลอก HTML เรียบร้อยแล้ว');
+            }, function() {
+                alert('ไม่สามารถคัดลอกได้ กรุณาลองอีกครั้ง');
             });
-            
-            // หาตำแหน่งสำหรับใส่ปุ่ม
-            const processedSection = processedImage.closest('.preview-section');
-            processedSection.appendChild(downloadProcessedBtn);
         }
-    }
+    });
     
-    // ฟังก์ชั่นครอปรูปเป็น headshot ขนาด 30x40 mm
-    function cropToHeadshot(img) {
-        updateStatus('กำลังครอปรูปให้ได้ขนาดมาตรฐาน 30×40 mm...', 'processing');
+    // ฟังก์ชันประมวลผลไฟล์ PDF
+    function processFile(file) {
+        var reader = new FileReader();
         
-        // คำนวณอัตราส่วนพิกเซลต่อมิลลิเมตร (ประมาณ 10 พิกเซลต่อมิลลิเมตร)
-        const pixelsPerMM = 10;
-        const targetWidth = 30 * pixelsPerMM;
-        const targetHeight = 40 * pixelsPerMM;
-        
-        // สร้าง canvas สำหรับครอปรูป
-        const canvas = document.createElement('canvas');
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        const ctx = canvas.getContext('2d');
-        
-        // เติมพื้นหลังสีขาว
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // คำนวณอัตราส่วนการย่อขยาย
-        const scale = Math.min(targetWidth / img.width, targetHeight / img.height);
-        const scaledWidth = img.width * scale;
-        const scaledHeight = img.height * scale;
-        
-        // คำนวณตำแหน่งให้อยู่ตรงกลาง
-        const x = (targetWidth - scaledWidth) / 2;
-        const y = (targetHeight - scaledHeight) / 2;
-        
-        // วาดรูปลงบน canvas
-        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-        
-        // แสดงผลลัพธ์
-        croppedImage.src = canvas.toDataURL('image/png');
-        downloadSection.classList.remove('hidden');
-        
-        // เปลี่ยนข้อความปุ่มดาวน์โหลดให้เฉพาะเจาะจงมากขึ้น
-        downloadBtn.textContent = 'ดาวน์โหลดรูปติดบัตร 30×40 mm';
-        
-        // เพิ่มข้อมูลขนาดรูปภาพ
-        addImageSizeInfo(canvas, img);
-    }
-    
-    // ฟังก์ชั่นเพิ่มข้อมูลขนาดรูปภาพ
-    function addImageSizeInfo(canvas, originalImg) {
-        // สร้าง div สำหรับแสดงข้อมูลขนาดรูปภาพ
-        let sizeInfoDiv = document.getElementById('imageSizeInfo');
-        
-        if (!sizeInfoDiv) {
-            sizeInfoDiv = document.createElement('div');
-            sizeInfoDiv.id = 'imageSizeInfo';
-            sizeInfoDiv.className = 'image-info';
+        reader.onload = function(event) {
+            var pdfData = new Uint8Array(event.target.result);
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
             
-            const croppedSection = croppedImage.closest('.preview-section');
-            croppedSection.appendChild(sizeInfoDiv);
-        }
+            pdfjsLib.getDocument({ data: pdfData }).promise.then(function(pdf) {
+                var numPages = pdf.numPages;
+                
+                // เริ่มต้นสร้าง HTML
+                var htmlContent = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">' +
+                '<html lang="th">' +
+                '<head>' +
+                '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">' +
+                '<title>แปลงจาก PDF</title>' +
+                '<style type="text/css">' +
+                'body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; }' +
+                '.page { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }' +
+                '.page-header { text-align: center; margin-bottom: 20px; font-weight: bold; }' +
+                'p { margin-bottom: 10px; }' +
+                'h1, h2, h3 { color: #333; }' +
+                '.page-number { text-align: center; margin-top: 20px; color: #888; }' +
+                '</style>' +
+                '</head>' +
+                '<body>';
+                
+                // วนลูปแปลงแต่ละหน้า
+                var processPage = function(pageNum) {
+                    pdf.getPage(pageNum).then(function(page) {
+                        var viewport = page.getViewport({ scale: 1.0 });
+                        
+                        // แปลงเนื้อหาจาก PDF เป็นข้อความ
+                        page.getTextContent().then(function(textContent) {
+                            // เริ่มต้นของหน้า
+                            htmlContent += '<div class="page" id="page-' + pageNum + '">' +
+                            '<div class="page-header">หน้า ' + pageNum + ' จาก ' + numPages + '</div>';
+                            
+                            // จัดโครงสร้างเนื้อหา
+                            var lastY = null;
+                            var isParagraph = false;
+                            var currentText = '';
+                            var items = textContent.items;
+                            
+                            // เริ่มสร้างโครงสร้างเอกสาร
+                            for (var j = 0; j < items.length; j++) {
+                                var item = items[j];
+                                
+                                // ตรวจสอบขนาดตัวอักษร (ถ้ามี) เพื่อกำหนดหัวข้อ
+                                var fontSize = item.transform[3];
+                                
+                                // ถ้าตำแหน่ง Y เปลี่ยน จบย่อหน้า
+                                if (lastY !== null && Math.abs(lastY - item.transform[5]) > 2) {
+                                    if (isParagraph && currentText.trim() !== '') {
+                                        htmlContent += '<p>' + currentText.trim() + '</p>';
+                                    }
+                                    isParagraph = false;
+                                    currentText = '';
+                                }
+                                
+                                // ตรวจสอบขนาดตัวอักษรเพื่อกำหนดหัวข้อ
+                                if (fontSize > 16) {
+                                    if (isParagraph && currentText.trim() !== '') {
+                                        htmlContent += '<p>' + currentText.trim() + '</p>';
+                                        isParagraph = false;
+                                        currentText = '';
+                                    }
+                                    htmlContent += '<h1>' + item.str.trim() + '</h1>';
+                                } else if (fontSize > 14) {
+                                    if (isParagraph && currentText.trim() !== '') {
+                                        htmlContent += '<p>' + currentText.trim() + '</p>';
+                                        isParagraph = false;
+                                        currentText = '';
+                                    }
+                                    htmlContent += '<h2>' + item.str.trim() + '</h2>';
+                                } else if (fontSize > 12) {
+                                    if (isParagraph && currentText.trim() !== '') {
+                                        htmlContent += '<p>' + currentText.trim() + '</p>';
+                                        isParagraph = false;
+                                        currentText = '';
+                                    }
+                                    htmlContent += '<h3>' + item.str.trim() + '</h3>';
+                                } else {
+                                    // เพิ่มข้อความเข้าไปในย่อหน้าปัจจุบัน
+                                    isParagraph = true;
+                                    currentText += (currentText && item.str ? ' ' : '') + item.str;
+                                }
+                                
+                                lastY = item.transform[5];
+                            }
+                            
+                            // เพิ่มย่อหน้าสุดท้าย
+                            if (isParagraph && currentText.trim() !== '') {
+                                htmlContent += '<p>' + currentText.trim() + '</p>';
+                            }
+                            
+                            // จบหน้า
+                            htmlContent += '<div class="page-number">' + pageNum + ' / ' + numPages + '</div>' +
+                            '</div>';
+                            
+                            // อัพเดตความคืบหน้า
+                            var progress = Math.round((pageNum - 1) / numPages * 100);
+                            progressBar.style.width = progress + '%';
+                            progressBar.textContent = progress + '%';
+                            
+                            // ถ้ามีหน้าถัดไปให้ประมวลผลต่อ
+                            if (pageNum < numPages) {
+                                processPage(pageNum + 1);
+                            } else {
+                                htmlContent += '</body></html>';
+                                processedHTML = htmlContent;
+                                preview.innerHTML = processedHTML;
+                                htmlOutput.value = processedHTML;
+                                downloadButton.disabled = false;
+                                copyButton.disabled = false;
+                                progressBar.style.width = '100%';
+                                progressBar.textContent = '100%';
+                                progressContainer.style.display = 'none';
+                            }
+                        });
+                    });
+                };
+                
+                // เริ่มประมวลผลจากหน้าแรก
+                processPage(1);
+                
+            }).catch(function(error) {
+                console.error('Error: ' + error.message);
+            });
+        };
         
-        // แสดงขนาดรูปภาพ
-        sizeInfoDiv.innerHTML = `
-            <p>ขนาด: 30×40 mm (${canvas.width}×${canvas.height} pixels)</p>
-            <p>อัตราส่วนพิกเซล: 10 pixels/mm</p>
-        `;
-    }
-    
-    // ฟังก์ชั่นดาวน์โหลดรูปที่ครอปแล้ว
-    function downloadCroppedImage() {
-        const link = document.createElement('a');
-        link.download = 'headshot_30x40mm.png';
-        link.href = croppedImage.src;
-        link.click();
+        reader.readAsArrayBuffer(file);
     }
 });
