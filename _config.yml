@@ -1,4 +1,9 @@
-   title: Your Site Title
+title: Your Site Title
    description: Your site description
    baseurl: "/headwiak"
    url: "https://protae5544.github.io"
+   
+   theme: minima
+   
+   plugins:
+     - jekyll-feed
