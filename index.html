@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF to HTML Converter</title>
-    <style>
+    <style type="text/css">
         body {
             font-family: 'Sarabun', sans-serif;
             line-height: 1.6;
@@ -110,7 +110,7 @@
         
         <div class="upload-area" id="drop-area">
             <p>คลิกหรือลากไฟล์ PDF มาวางที่นี่</p>
-            <input type="file" id="file-input" accept=".pdf" />
+            <input type="file" id="file-input" accept=".pdf">
             <button class="button" id="select-button">เลือกไฟล์ PDF</button>
         </div>
         
@@ -131,24 +131,24 @@
     </div>
 
     <!-- PDF.js Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script type="text/javascript">
         // กำหนดค่า PDF.js worker
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         
         document.addEventListener('DOMContentLoaded', function() {
-            const dropArea = document.getElementById('drop-area');
-            const fileInput = document.getElementById('file-input');
-            const selectButton = document.getElementById('select-button');
-            const progressContainer = document.getElementById('progress-container');
-            const progressBar = document.getElementById('progress-bar');
-            const preview = document.getElementById('preview');
-            const htmlOutput = document.getElementById('html-output');
-            const downloadButton = document.getElementById('download-html');
-            const copyButton = document.getElementById('copy-html');
+            var dropArea = document.getElementById('drop-area');
+            var fileInput = document.getElementById('file-input');
+            var selectButton = document.getElementById('select-button');
+            var progressContainer = document.getElementById('progress-container');
+            var progressBar = document.getElementById('progress-bar');
+            var preview = document.getElementById('preview');
+            var htmlOutput = document.getElementById('html-output');
+            var downloadButton = document.getElementById('download-html');
+            var copyButton = document.getElementById('copy-html');
             
             // ตัวแปรเก็บข้อมูล
-            let processedHTML = '';
+            var processedHTML = '';
             
             // อีเวนต์คลิกที่ปุ่มเลือกไฟล์
             selectButton.addEventListener('click', function() {
@@ -157,7 +157,7 @@
             
             // อีเวนต์เมื่อมีการเลือกไฟล์
             fileInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
+                var file = e.target.files[0];
                 if (file && file.type === 'application/pdf') {
                     processFile(file);
                 } else {
@@ -179,7 +179,7 @@
                 e.preventDefault();
                 dropArea.style.backgroundColor = '#f9f9f9';
                 
-                const file = e.dataTransfer.files[0];
+                var file = e.dataTransfer.files[0];
                 if (file && file.type === 'application/pdf') {
                     processFile(file);
                 } else {
@@ -190,9 +190,9 @@
             // อีเวนต์ดาวน์โหลด HTML
             downloadButton.addEventListener('click', function() {
                 if (processedHTML) {
-                    const blob = new Blob([processedHTML], { type: 'text/html' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
+                    var blob = new Blob([processedHTML], { type: 'text/html' });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
                     a.href = url;
                     a.download = 'converted-document.html';
                     document.body.appendChild(a);
@@ -215,133 +215,141 @@
             
             // ฟังก์ชันประมวลผลไฟล์ PDF
             function processFile(file) {
-                const reader = new FileReader();
+                var reader = new FileReader();
                 
-                reader.onload = async function(event) {
-                    const pdfData = new Uint8Array(event.target.result);
+                reader.onload = function(event) {
+                    var pdfData = new Uint8Array(event.target.result);
                     progressContainer.style.display = 'block';
                     progressBar.style.width = '0%';
                     progressBar.textContent = '0%';
                     
-                    try {
-                        const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-                        const numPages = pdf.numPages;
+                    pdfjsLib.getDocument({ data: pdfData }).promise.then(function(pdf) {
+                        var numPages = pdf.numPages;
                         
                         // เริ่มต้นสร้าง HTML
-                        let htmlContent = `<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แปลงจาก PDF</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-        }
-        .page {
-            margin-bottom: 30px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .page-header {
-            text-align: center;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-        p {
-            margin-bottom: 10px;
-        }
-        h1, h2, h3 {
-            color: #333;
-        }
-        .page-number {
-            text-align: center;
-            margin-top: 20px;
-            color: #888;
-        }
-    </style>
-</head>
-<body>`;
+                        var htmlContent = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">' +
+                        '<html lang="th">' +
+                        '<head>' +
+                        '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">' +
+                        '<title>แปลงจาก PDF</title>' +
+                        '<style type="text/css">' +
+                        'body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; }' +
+                        '.page { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }' +
+                        '.page-header { text-align: center; margin-bottom: 20px; font-weight: bold; }' +
+                        'p { margin-bottom: 10px; }' +
+                        'h1, h2, h3 { color: #333; }' +
+                        '.page-number { text-align: center; margin-top: 20px; color: #888; }' +
+                        '</style>' +
+                        '</head>' +
+                        '<body>';
                         
                         // วนลูปแปลงแต่ละหน้า
-                        for (let i = 1; i <= numPages; i++) {
-                            // อัพเดตความคืบหน้า
-                            const progress = Math.round((i - 1) / numPages * 100);
-                            progressBar.style.width = progress + '%';
-                            progressBar.textContent = progress + '%';
-                            
-                            const page = await pdf.getPage(i);
-                            const viewport = page.getViewport({ scale: 1.0 });
-                            
-                            // แปลงเนื้อหาจาก PDF เป็นข้อความ
-                            const textContent = await page.getTextContent();
-                            
-                            // เริ่มต้นของหน้า
-                            htmlContent += `\n<div class="page" id="page-${i}">`;
-                            htmlContent += `\n    <div class="page-header">หน้า ${i} จาก ${numPages}</div>`;
-                            
-                            // จัดโครงสร้างเนื้อหา
-                            let lastY = null;
-                            let isParagraph = false;
-                            let currentText = '';
-                            let items = textContent.items;
-                            
-                            // เริ่มสร้างโครงสร้างเอกสาร
-                            for (let j = 0; j < items.length; j++) {
-                                const item = items[j];
+                        var processPage = function(pageNum) {
+                            pdf.getPage(pageNum).then(function(page) {
+                                var viewport = page.getViewport({ scale: 1.0 });
                                 
-                                // ตรวจสอบขนาดตัวอักษร (ถ้ามี) เพื่อกำหนดหัวข้อ
-                                const fontSize = item.transform[3];
-                                
-                                // ถ้าตำแหน่ง Y เปลี่ยน จบย่อหน้า
-                                if (lastY !== null && Math.abs(lastY - item.transform[5]) > 2) {
-                                    if (isParagraph && currentText.trim() !== '') {
-                                        htmlContent += `\n    <p>${currentText.trim()}</p>`;
+                                // แปลงเนื้อหาจาก PDF เป็นข้อความ
+                                page.getTextContent().then(function(textContent) {
+                                    // เริ่มต้นของหน้า
+                                    htmlContent += '<div class="page" id="page-' + pageNum + '">' +
+                                    '<div class="page-header">หน้า ' + pageNum + ' จาก ' + numPages + '</div>';
+                                    
+                                    // จัดโครงสร้างเนื้อหา
+                                    var lastY = null;
+                                    var isParagraph = false;
+                                    var currentText = '';
+                                    var items = textContent.items;
+                                    
+                                    // เริ่มสร้างโครงสร้างเอกสาร
+                                    for (var j = 0; j < items.length; j++) {
+                                        var item = items[j];
+                                        
+                                        // ตรวจสอบขนาดตัวอักษร (ถ้ามี) เพื่อกำหนดหัวข้อ
+                                        var fontSize = item.transform[3];
+                                        
+                                        // ถ้าตำแหน่ง Y เปลี่ยน จบย่อหน้า
+                                        if (lastY !== null && Math.abs(lastY - item.transform[5]) > 2) {
+                                            if (isParagraph && currentText.trim() !== '') {
+                                                htmlContent += '<p>' + currentText.trim() + '</p>';
+                                            }
+                                            isParagraph = false;
+                                            currentText = '';
+                                        }
+                                        
+                                        // ตรวจสอบขนาดตัวอักษรเพื่อกำหนดหัวข้อ
+                                        if (fontSize > 16) {
+                                            if (isParagraph && currentText.trim() !== '') {
+                                                htmlContent += '<p>' + currentText.trim() + '</p>';
+                                                isParagraph = false;
+                                                currentText = '';
+                                            }
+                                            htmlContent += '<h1>' + item.str.trim() + '</h1>';
+                                        } else if (fontSize > 14) {
+                                            if (isParagraph && currentText.trim() !== '') {
+                                                htmlContent += '<p>' + currentText.trim() + '</p>';
+                                                isParagraph = false;
+                                                currentText = '';
+                                            }
+                                            htmlContent += '<h2>' + item.str.trim() + '</h2>';
+                                        } else if (fontSize > 12) {
+                                            if (isParagraph && currentText.trim() !== '') {
+                                                htmlContent += '<p>' + currentText.trim() + '</p>';
+                                                isParagraph = false;
+                                                currentText = '';
+                                            }
+                                            htmlContent += '<h3>' + item.str.trim() + '</h3>';
+                                        } else {
+                                            // เพิ่มข้อความเข้าไปในย่อหน้าปัจจุบัน
+                                            isParagraph = true;
+                                            currentText += (currentText && item.str ? ' ' : '') + item.str;
+                                        }
+                                        
+                                        lastY = item.transform[5];
                                     }
-                                    isParagraph = false;
-                                    currentText = '';
-                                }
-                                
-                                // ตรวจสอบขนาดตัวอักษรเพื่อกำหนดหัวข้อ
-                                if (fontSize > 16) {
+                                    
+                                    // เพิ่มย่อหน้าสุดท้าย
                                     if (isParagraph && currentText.trim() !== '') {
-                                        htmlContent += `\n    <p>${currentText.trim()}</p>`;
-                                        isParagraph = false;
-                                        currentText = '';
+                                        htmlContent += '<p>' + currentText.trim() + '</p>';
                                     }
-                                    htmlContent += `\n    <h1>${item.str.trim()}</h1>`;
-                                } else if (fontSize > 14) {
-                                    if (isParagraph && currentText.trim() !== '') {
-                                        htmlContent += `\n    <p>${currentText.trim()}</p>`;
-                                        isParagraph = false;
-                                        currentText = '';
+                                    
+                                    // จบหน้า
+                                    htmlContent += '<div class="page-number">' + pageNum + ' / ' + numPages + '</div>' +
+                                    '</div>';
+                                    
+                                    // อัพเดตความคืบหน้า
+                                    var progress = Math.round((pageNum - 1) / numPages * 100);
+                                    progressBar.style.width = progress + '%';
+                                    progressBar.textContent = progress + '%';
+                                    
+                                    // ถ้ามีหน้าถัดไปให้ประมวลผลต่อ
+                                    if (pageNum < numPages) {
+                                        processPage(pageNum + 1);
+                                    } else {
+                                        htmlContent += '</body></html>';
+                                        processedHTML = htmlContent;
+                                        preview.innerHTML = processedHTML;
+                                        htmlOutput.value = processedHTML;
+                                        downloadButton.disabled = false;
+                                        copyButton.disabled = false;
+                                        progressBar.style.width = '100%';
+                                        progressBar.textContent = '100%';
+                                        progressContainer.style.display = 'none';
                                     }
-                                    htmlContent += `\n    <h2>${item.str.trim()}</h2>`;
-                                } else if (fontSize > 12) {
-                                    if (isParagraph && currentText.trim() !== '') {
-                                        htmlContent += `\n    <p>${currentText.trim()}</p>`;
-                                        isParagraph = false;
-                                        currentText = '';
-                                    }
-                                    htmlContent += `\n    <h3>${item.str.trim()}</h3>`;
-                                } else {
-                                    // เพิ่มข้อความเข้าไปในย่อหน้าปัจจุบัน
-                                    isParagraph = true;
-                                    currentText += (currentText && item.str ? ' ' : '') + item.str;
-                                }
-                                
-                                lastY = item.transform[5];
-                            }
-                            
-                            // เพิ่มย่อหน้าสุดท้าย
-                            if (isParagraph && currentText.trim() !== '') {
-                                htmlContent += `\n    <p>${currentText.trim()}</p>`;
-                            }
-                            
-                            // จบหน้า
-                            htmlContent += `\n    <div class="page-number">${i} / ${numPages}</div>`;
-                            htmlContent += `\n</div>\
+                                });
+                            });
+                        };
+                        
+                        // เริ่มประมวลผลจากหน้าแรก
+                        processPage(1);
+                        
+                    }).catch(function(error) {
+                        console.error('Error: ' + error.message);
+                    });
+                };
+                
+                reader.readAsArrayBuffer(file);
+            }
+        });
+    </script>
+</body>
+</html>
