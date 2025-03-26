@@ -2,9 +2,9 @@ name: Jekyll site CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "protae5544-patch-1" ]  # เปลี่ยนจาก "main" เป็น "protae5544-patch-1"
   pull_request:
-    branches: [ "main" ]
+    branches: [ "protae5544-patch-1" ]  # เปลี่ยนจาก "main" เป็น "protae5544-patch-1"
 
 jobs:
   build:
